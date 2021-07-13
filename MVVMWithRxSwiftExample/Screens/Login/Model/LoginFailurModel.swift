@@ -6,3 +6,7 @@
 //
 
 import Foundation
+
+struct LoginFailureModel: Codable {
+    let message: String?
+}

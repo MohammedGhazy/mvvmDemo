@@ -6,24 +6,78 @@
 //
 
 import UIKit
-
+import RxCocoa
+import RxSwift
 class HomeVC: UIViewController {
-
+    
+    let tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.translatesAutoresizingMaskIntoConstraints = false
+        tableView.register(HomeTableViewCell.self, forCellReuseIdentifier: HomeTableViewCell.reuseIdentifier)
+        return tableView
+    }()
+    
+    let homeViewModel = HomeViewModel()
+    let disposeBag    = DisposeBag()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-
-        // Do any additional setup after loading the view.
+        configureViewController()
+        configureTableView()
+        subscribeToLoading()
+        subscribeToResponse()
+        subscribeToPostSelection()
+        getData()
     }
     
-
-    /*
-    // MARK: - Navigation
-
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+    func configureViewController() {
+        title = "Home"
+        view.backgroundColor = .systemBackground
     }
-    */
-
+    
+    func configureTableView() {
+        view.addSubview(tableView)
+        
+        NSLayoutConstraint.activate([
+            tableView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
+        ])
+    }
+    
+    func subscribeToLoading() {
+        homeViewModel.loadingBehavior.subscribe(onNext: { (isLoading) in
+            if isLoading {
+                self.showProgressIndicator()
+            } else {
+                self.dismissIndicator()
+            }
+        }).disposed(by: disposeBag)
+    }
+    
+    func subscribeToResponse() {
+        self.homeViewModel.homeModelObservable
+            .bind(to: self.tableView
+                    .rx
+                    .items(cellIdentifier: HomeTableViewCell.reuseIdentifier,
+                           cellType: HomeTableViewCell.self)) { row, home, cell in
+                print(row)
+                cell.titleLabel.text     = home.title
+                cell.secondaryLabel.text = home.body
+            }
+            .disposed(by: disposeBag)
+    }
+    
+    func subscribeToPostSelection() {
+        Observable.zip(tableView.rx.itemSelected,tableView.rx.modelSelected(HomeModel.self)).bind(onNext: {
+            selectedIndex,post in
+            print(selectedIndex)
+        }).disposed(by: disposeBag)
+    }
+    
+    func getData() {
+        homeViewModel.getData()
+    }
+    
 }

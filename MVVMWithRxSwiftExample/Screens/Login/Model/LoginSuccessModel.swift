@@ -6,3 +6,8 @@
 //
 
 import Foundation
+
+struct LoginSuccessModel: Codable {
+    let token: String
+    let userId: String
+}
